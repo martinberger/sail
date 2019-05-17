@@ -730,7 +730,7 @@ let string_of_phis = function
 
 let string_of_node = function
   | (phis, CF_label label) -> string_of_phis phis ^ label
-  | (phis, CF_block (instrs, terminator)) -> string_of_phis phis ^ Util.string_of_list "\\l" (fun instr -> String.escaped (Pretty_print_sail.to_string (pp_instr ~short:true instr))) instrs
+  | (phis, CF_block (instrs, terminator)) -> string_of_phis phis ^ Util.string_of_list "\\l" (fun instr -> String.escaped (Pretty_print.to_string 120 (pp_instr ~short:true instr))) instrs
   | (phis, CF_start inits) -> string_of_phis phis ^ "START"
   | (phis, CF_guard cval) -> string_of_phis phis ^ string_of_int cval
 

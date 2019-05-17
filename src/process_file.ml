@@ -48,7 +48,7 @@
 (*  SUCH DAMAGE.                                                          *)
 (**************************************************************************)
 
-open PPrint
+open Pretty_print
 open Pretty_print_common
 
 let opt_lem_output_dir = ref None
@@ -238,7 +238,7 @@ let opt_dno_cast = ref false
 let check_ast (env : Type_check.Env.t) (defs : unit Ast.defs) : Type_check.tannot Ast.defs * Type_check.Env.t =
   let env = if !opt_dno_cast then Type_check.Env.no_casts env else env in
   let ast, env = Type_error.check env defs in
-  let () = if !opt_ddump_tc_ast then Pretty_print_sail.pp_defs stdout ast else () in
+  let () = if !opt_ddump_tc_ast then Pretty_print.to_channel 120 stdout (Pretty_print_sail.doc_defs ast) else () in
   let () = if !opt_just_check then exit 0 else () in
   (ast, env)
 
@@ -306,7 +306,7 @@ let output_lem filename libs type_env defs =
     open_output_with_check_unformatted !opt_lem_output_dir (filename ^ "_types" ^ ".lem") in
   let ((o,_,_,_) as ext_o) =
     open_output_with_check_unformatted !opt_lem_output_dir (filename ^ ".lem") in
-  (Pretty_print.pp_defs_lem
+  (Pretty_print_lem.pp_defs_lem
      (ot, base_imports)
      (o, base_imports @ (String.capitalize_ascii types_module :: libs))
      type_env defs generated_line);
@@ -369,7 +369,7 @@ let rewrite_step n total env defs (name, rewriter) =
         let filename = f ^ "_rewrite_" ^ string_of_int i ^ "_" ^ name ^ ".sail" in
         (* output "" Lem_ast_out [filename, defs]; *)
         let ((ot,_,_,_) as ext_ot) = open_output_with_check_unformatted None filename in
-        Pretty_print_sail.pp_defs ot defs;
+        Pretty_print.to_channel 120 ot (Pretty_print_sail.doc_defs defs);
         close_output_with_check ext_ot;
         opt_ddump_rewrite_ast := Some (f, i + 1)
       end

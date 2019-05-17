@@ -50,7 +50,7 @@
 
 open Ast
 open Ast_util
-open PPrint
+open Pretty_print
 open Type_check
 open Util
 open Pretty_print_common
@@ -397,7 +397,7 @@ let tofrominterp_defs name (Defs defs) =
   ^^ concat (List.map tofrominterp_def defs)
 
 let tofrominterp_pp_defs name f defs =
-  ToChannel.pretty 1. 80 f (tofrominterp_defs name defs)
+  Pretty_print.to_channel 120 f (tofrominterp_defs name defs)
 
 let tofrominterp_output maybe_dir name defs =
   let dir = match maybe_dir with Some dir -> dir | None -> "." in

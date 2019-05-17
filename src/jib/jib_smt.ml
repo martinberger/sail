@@ -1392,7 +1392,7 @@ let rec rmw_write = function
   | CL_tuple (clexp, _) -> rmw_write clexp
   | CL_field (clexp, _) -> rmw_write clexp
   | clexp ->
-     failwith (Pretty_print_sail.to_string (pp_clexp clexp))
+     failwith (Pretty_print.to_string 120 (pp_clexp clexp))
 
 let rmw_read = function
   | CL_rmw (read, _, _) -> zencode_name read
@@ -1569,7 +1569,7 @@ let smt_instr ctx =
      Reporting.unreachable l __POS__ "SMT: Instruction should only appear as block terminator"
 
   | instr ->
-     failwith ("Cannot translate: " ^ Pretty_print_sail.to_string (pp_instr instr))
+     failwith ("Cannot translate: " ^ Pretty_print.to_string 120 (pp_instr instr))
 
 let smt_cfnode all_cdefs ctx ssanodes =
   let open Jib_ssa in

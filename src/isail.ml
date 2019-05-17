@@ -430,22 +430,21 @@ let handle_input' input =
         Interactive.env := env;
         interactive_state := initial_state !Interactive.ast !Interactive.env Value.primops
      | ":pretty" ->
-        print_endline (Pretty_print_sail.to_string (Latex.defs !Interactive.ast))
+        print_endline (Pretty_print.to_string 120 (Latex.defs !Interactive.ast))
      | ":ir" ->
         print_endline arg;
         let open Jib in
         let open Jib_util in
-        let open PPrint in
         let is_cdef = function
           | CDEF_fundef (id, _, _, _) when Id.compare id (mk_id arg) = 0 -> true
           | CDEF_spec (id, _, _) when Id.compare id (mk_id arg) = 0 -> true
           | _ -> false
         in
         let cdefs = List.filter is_cdef !interactive_bytecode in
-        print_endline (Pretty_print_sail.to_string (separate_map hardline pp_cdef cdefs))
+        print_endline (Pretty_print.(separate_map hardline pp_cdef cdefs |> to_string 120))
      | ":ast" ->
         let chan = open_out arg in
-        Pretty_print_sail.pp_defs chan !Interactive.ast;
+        Pretty_print.to_channel 120 chan (Pretty_print_sail.doc_defs !Interactive.ast);
         close_out chan
      | ":output" ->
         let chan = open_out arg in

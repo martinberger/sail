@@ -50,7 +50,7 @@
 
 open Ast
 open Ast_util
-open PPrint
+open Pretty_print
 open Type_check
 open Util
 
@@ -962,8 +962,7 @@ let ocaml_main spec sail_dir =
   |> String.concat "\n"
 
 let ocaml_pp_defs f defs generator_types =
-  ToChannel.pretty 1. 80 f (ocaml_defs defs generator_types)
-
+  Pretty_print.to_channel 120 f (ocaml_defs defs generator_types)
 
 let system_checked str =
   match Unix.system str with

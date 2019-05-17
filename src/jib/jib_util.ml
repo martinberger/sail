@@ -52,7 +52,7 @@ open Ast
 open Ast_util
 open Jib
 open Value2
-open PPrint
+open Pretty_print
 
 (* Define wrappers for creating bytecode instructions. Each function
    uses a counter to assign each instruction a unique identifier. *)
@@ -638,6 +638,15 @@ let rec pp_instr ?short:(short=false) (I_aux (instr, aux)) =
   | I_raw str ->
      pp_keyword "C" ^^ string (str |> Util.cyan |> Util.clear)
 
+let pp_instrs = function
+  | [] -> empty
+  | instr :: instrs ->
+     let f doc = function
+       | I_aux (I_label _, _) as i -> doc ^^ semi ^^ dedent 2 ^^ pp_instr i
+       | i -> doc ^^ semi ^^ hardline ^^ pp_instr i
+     in
+     List.fold_left f (pp_instr instr) instrs
+    
 let pp_ctype_def = function
   | CTD_enum (id, ids) ->
      pp_keyword "enum" ^^ pp_id id ^^ string " = "
@@ -659,7 +668,7 @@ let pp_cdef = function
        | Some id -> space ^^ pp_id id
      in
      pp_keyword "function" ^^ pp_id id ^^ ret ^^ parens (separate_map (comma ^^ space) pp_id args) ^^ space
-     ^^ surround 2 0 lbrace (separate_map (semi ^^ hardline) pp_instr instrs) rbrace
+     ^^ surround 2 0 lbrace (pp_instrs instrs) rbrace
      ^^ hardline
   | CDEF_reg_dec (id, ctyp, instrs) ->
      pp_keyword "register" ^^ pp_id id ^^ string " : " ^^ pp_ctyp ctyp ^^ space

@@ -568,7 +568,7 @@ let specialize_ids spec ids ast =
   | Some (f, i) ->
      let filename = f ^ "_spec_" ^ string_of_int i ^ ".sail" in
      let out_chan = open_out filename in
-     Pretty_print_sail.pp_defs out_chan ast;
+     Pretty_print.to_channel 120 out_chan (Pretty_print_sail.doc_defs ast);
      close_out out_chan;
      opt_ddump_spec_ast := Some (f, i + 1)
   | None -> ()

@@ -50,13 +50,13 @@
 
 open Ast
 open Ast_util
-open PPrint
+open Pretty_print
 
 let opt_use_heuristics = ref false
 
 module Big_int = Nat_big_num
 
-let doc_op symb a b = infix 2 1 symb a b
+let doc_op symb a b = a ^^ space ^^ symb ^^ space ^^ b
 
 let doc_id (Id_aux (id_aux, _)) =
   string (match id_aux with
@@ -308,7 +308,7 @@ let doc_typquant (TypQ_aux (tq_aux, _)) =
   | TypQ_tq qs -> Some (doc_param_quants qs)
 
 let doc_lit (L_aux(l,_)) =
-  utf8string (match l with
+  string (match l with
   | L_unit  -> "()"
   | L_zero  -> "bitzero"
   | L_one   -> "bitone"
@@ -439,7 +439,7 @@ let rec doc_exp (E_aux (e_aux, _) as exp) =
   | E_for (id, exp1, exp2, exp3, order, exp4) ->
      let header =
        string "foreach" ^^ space ^^
-         group (parens (separate (break 1)
+         group (parens (separate space
                                  [ doc_id id;
                                    string "from " ^^ doc_atomic_exp exp1;
                                    string "to " ^^ doc_atomic_exp exp2;
@@ -640,22 +640,22 @@ let doc_typdef (TD_aux(td,_)) = match td with
           doc_op equals (concat [string "type"; space; doc_id id; doc_typ_arg_kind ":" typ_arg]) (doc_typ_arg typ_arg)
      end
   | TD_enum (id, ids, _) ->
-     separate space [string "enum"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_id ids) rbrace]
+     separate space [string "enum"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ hardline) doc_id ids) rbrace]
   | TD_record (id, TypQ_aux (TypQ_no_forall, _), fields, _) | TD_record (id, TypQ_aux (TypQ_tq [], _), fields, _) ->
-     separate space [string "struct"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_field fields) rbrace]
+     separate space [string "struct"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ hardline) doc_field fields) rbrace]
   | TD_record (id, TypQ_aux (TypQ_tq qs, _), fields, _) ->
      separate space [string "struct"; doc_id id; doc_param_quants qs; equals;
-                     surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_field fields) rbrace]
+                     surround 2 0 lbrace (separate_map (comma ^^ hardline) doc_field fields) rbrace]
   | TD_variant (id, TypQ_aux (TypQ_no_forall, _), unions, _) | TD_variant (id, TypQ_aux (TypQ_tq [], _), unions, _) ->
-     separate space [string "union"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_union unions) rbrace]
+     separate space [string "union"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ hardline) doc_union unions) rbrace]
   | TD_variant (id, TypQ_aux (TypQ_tq qs, _), unions, _) ->
      separate space [string "union"; doc_id id; doc_param_quants qs; equals;
-                     surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_union unions) rbrace]
+                     surround 2 0 lbrace (separate_map (comma ^^ hardline) doc_union unions) rbrace]
   | TD_bitfield _ -> string "BITFIELD" (* should be rewritten *)
 
 let doc_spec ?comment:(comment=false) (VS_aux (v, annot)) =
   let doc_extern ext =
-    let docs = List.map (fun (backend, rep) -> string (backend ^ ":") ^^ space ^^ utf8string ("\"" ^ String.escaped rep ^ "\"")) ext in
+    let docs = List.map (fun (backend, rep) -> string (backend ^ ":") ^^ space ^^ string ("\"" ^ String.escaped rep ^ "\"")) ext in
     if docs = [] then empty else equals ^^ space ^^ braces (separate (comma ^^ space) docs)
   in
   match v with
@@ -674,7 +674,7 @@ let doc_prec = function
   | InfixR -> string "infixr"
 
 let doc_loop_measures l =
-  separate_map (comma ^^ break 1)
+  separate_map (comma ^^ hardline)
     (function (Loop (l,e)) ->
        string (match l with While -> "while" | Until -> "until") ^^
          space ^^ doc_exp e)
@@ -724,17 +724,11 @@ let rec doc_def def = group (match def with
      fixities := Bindings.add id (prec, Big_int.to_int n) !fixities;
      separate space [doc_prec prec; doc_int n; doc_id id]
   | DEF_overload (id, ids) ->
-     separate space [string "overload"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ break 1) doc_id ids) rbrace]
+     separate space [string "overload"; doc_id id; equals; surround 2 0 lbrace (separate_map (comma ^^ space) doc_id ids) rbrace]
   ) ^^ hardline
 
-let doc_defs (Defs(defs)) =
+let doc_defs (Defs defs) =
   separate_map hardline doc_def defs
 
-let pp_defs f d = ToChannel.pretty 1. 80 f (doc_defs d)
-
-let pretty_sail f doc = ToChannel.pretty 1. 120 f doc
-
-let to_string doc =
-  let b = Buffer.create 120 in
-  ToBuffer.pretty 1. 120 b doc;
-  Buffer.contents b
+let pretty_sail chan doc =
+  to_channel 120 chan doc

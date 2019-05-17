@@ -420,7 +420,7 @@ let target name out_name ast type_envs =
   | None -> ()
 
   | Some "sail" ->
-     Pretty_print_sail.pp_defs stdout ast
+     Pretty_print.to_channel 120 stdout (Pretty_print_sail.doc_defs ast)
 
   | Some "ocaml" ->
      let ocaml_generator_info =
@@ -474,7 +474,7 @@ let target name out_name ast type_envs =
      Util.opt_warnings := true;
      let cdefs, _ = C_backend.jib_of_ast type_envs ast_c in
      (* let cdefs = List.map Jib_optimize.flatten_cdef cdefs in *)
-     let str = Pretty_print_sail.to_string PPrint.(separate_map hardline Jib_util.pp_cdef cdefs) in
+     let str = Pretty_print.(separate_map hardline Jib_util.pp_cdef cdefs |> to_string 120) in
      output_string output_chan (str ^ "\n");
      flush output_chan;
      if close then close_out output_chan else ()
@@ -512,7 +512,7 @@ let target name out_name ast type_envs =
      end;
      Latex.opt_directory := latex_dir;
      let chan = open_out (Filename.concat latex_dir "commands.tex") in
-     output_string chan (Pretty_print_sail.to_string (Latex.defs ast));
+     output_string chan (Pretty_print.to_string 120 (Latex.defs ast));
      close_out chan
 
   | Some t ->

@@ -164,5 +164,5 @@ val anf : tannot exp -> typ aexp
 
 (** {2 Pretty printing ANF expressions} *)
 
-val pp_aval : typ aval -> PPrint.document
-val pp_aexp : typ aexp -> PPrint.document
+val pp_aval : typ aval -> Pretty_print.doc
+val pp_aexp : typ aexp -> Pretty_print.doc

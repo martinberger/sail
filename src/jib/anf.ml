@@ -53,7 +53,7 @@ open Ast_util
 open Jib
 open Jib_util
 open Type_check
-open PPrint
+open Pretty_print
 
 module Big_int = Nat_big_num
 
@@ -420,7 +420,7 @@ let rec pp_aexp (AE_aux (aexp, _, _)) =
   | AE_for (id, aexp1, aexp2, aexp3, order, aexp4) ->
      let header =
        string "foreach" ^^ space ^^
-         group (parens (separate (break 1)
+         group (parens (separate space
                                  [ pp_id id;
                                    string "from " ^^ pp_aexp aexp1;
                                    string "to " ^^ pp_aexp aexp2;

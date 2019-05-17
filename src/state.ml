@@ -54,7 +54,7 @@ open Initial_check
 open Type_check
 open Ast
 open Ast_util
-open PPrint
+open Pretty_print
 open Pretty_print_common
 open Pretty_print_sail
 
@@ -81,7 +81,7 @@ let find_registers defs =
 let generate_regstate = function
   | [] -> ["type regstate = unit"]
   | registers ->
-     let reg (typ, id) = Printf.sprintf "%s : %s" (string_of_id id) (to_string (doc_typ typ)) in
+     let reg (typ, id) = Printf.sprintf "%s : %s" (string_of_id id) (Pretty_print.to_string 120 (doc_typ typ)) in
      ["struct regstate = { " ^ (String.concat ", " (List.map reg registers)) ^ " }"]
 
 let generate_initial_regstate defs =
@@ -211,7 +211,7 @@ let register_base_types mwords typs =
 
 let generate_regval_typ typs =
   let constr (constr_id, typ) =
-    Printf.sprintf "Regval_%s : %s" (string_of_id constr_id) (to_string (doc_typ typ)) in
+    Printf.sprintf "Regval_%s : %s" (string_of_id constr_id) (Pretty_print.to_string 120 (doc_typ typ)) in
   let builtins =
     "Regval_vector : (int, bool, list(register_value)), " ^
     "Regval_list : list(register_value), " ^
@@ -223,7 +223,7 @@ let generate_regval_typ typs =
 
 let add_regval_conv id typ (Defs defs) =
   let id = string_of_id id in
-  let typ_str = to_string (doc_typ typ) in
+  let typ_str = Pretty_print.to_string 120 (doc_typ typ) in
   (* Create a function that converts from regval to the target type. *)
   let from_name = id ^ "_of_regval" in
   let from_val = Printf.sprintf "val %s : register_value -> option(%s)" from_name typ_str in
@@ -350,7 +350,7 @@ let generate_isa_lemmas mwords (Defs defs : tannot defs) =
   in
   let register_defs =
     let reg_id id = remove_leading_underscores (string_of_id id) in
-    hang 2 (flow_map (break 1) string
+    hang 2 (separate_map (break 1) string
       (["lemmas register_defs"; "="; "get_regval_def"; "set_regval_def"] @
       (List.map (fun (typ, id) -> reg_id id ^ "_ref_def") registers)))
   in

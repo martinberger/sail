@@ -53,11 +53,11 @@ open Ast
 open Ast_util
 open Reporting
 open Rewriter
-open PPrint
+open Pretty_print
 open Pretty_print_common
 
 (****************************************************************************
- * PPrint-based sail-to-lem pprinter
+ * Sail to Lem pretty printer
 ****************************************************************************)
 
 let opt_sequential = ref false
@@ -393,23 +393,23 @@ let max_int32 = Big_int.of_int64 (Int64.of_int32 Int32.max_int)
 
 let doc_lit_lem (L_aux(lit,l)) =
   match lit with
-  | L_unit  -> utf8string "()"
-  | L_zero  -> utf8string "B0"
-  | L_one   -> utf8string "B1"
-  | L_false -> utf8string "false"
-  | L_true  -> utf8string "true"
+  | L_unit  -> string "()"
+  | L_zero  -> string "B0"
+  | L_one   -> string "B1"
+  | L_false -> string "false"
+  | L_true  -> string "true"
   | L_num i when Big_int.less_equal min_int32 i && Big_int.less_equal i max_int32 ->
      let ipp = Big_int.to_string i in
-     utf8string (
+     string (
        if Big_int.less i Big_int.zero then "((0"^ipp^"):ii)"
        else "("^ipp^":ii)")
   | L_num i ->
-     utf8string (Printf.sprintf "(integerOfString \"%s\")" (Big_int.to_string i))
+     string (Printf.sprintf "(integerOfString \"%s\")" (Big_int.to_string i))
   | L_hex n -> failwith "Shouldn't happen" (*"(num_to_vec " ^ ("0x" ^ n) ^ ")" (*shouldn't happen*)*)
   | L_bin n -> failwith "Shouldn't happen" (*"(num_to_vec " ^ ("0b" ^ n) ^ ")" (*shouldn't happen*)*)
   | L_undef ->
-     utf8string "(return (failwith \"undefined value of unsupported type\"))"
-  | L_string s -> utf8string ("\"" ^ (String.escaped s) ^ "\"")
+     string "(return (failwith \"undefined value of unsupported type\"))"
+  | L_string s -> string ("\"" ^ (String.escaped s) ^ "\"")
   | L_real s ->
     (* Lem does not support decimal syntax, so we translate a string
        of the form "x.y" into the ratio (x * 10^len(y) + y) / 10^len(y).
@@ -667,7 +667,7 @@ let doc_exp_lem, doc_let_lem =
        | Id_aux (Id "and_bool", _) | Id_aux (Id "or_bool", _)
          when effectful (effect_of full_exp) ->
           let call = doc_id_lem (append_id f "M") in
-          wrap_parens (hang 2 (flow (break 1) (call :: List.map expY args)))
+          wrap_parens (hang 2 (separate (break 1) (call :: List.map expY args)))
        (* temporary hack to make the loop body a function of the temporary variables *)
        | Id_aux (Id "foreach#", _) ->
           begin
@@ -789,7 +789,7 @@ let doc_exp_lem, doc_let_lem =
                | Some (env, _, _) when Env.is_extern f env "lem" ->
                  string (Env.get_extern f env "lem"), true
                | _ -> doc_id_lem f, false in
-             let epp = hang 2 (flow (break 1) (call :: List.map expY args)) in
+             let epp = hang 2 (separate (break 1) (call :: List.map expY args)) in
              let (taepp,aexp_needed) =
                let env = env_of full_exp in
                let t = Env.expand_synonyms env (typ_of full_exp) in
@@ -884,7 +884,7 @@ let doc_exp_lem, doc_let_lem =
                   if count = 20 then 0 else count + 1)
                 (expN e,0) es in
             align (group expspp) in *)
-       let expspp = align (group (flow_map (semi ^^ break 0) expN exps)) in
+       let expspp = align (group (separate_map (semi ^^ break 0) expN exps)) in
        let epp = brackets expspp in
        let (epp,aexp_needed) =
          if is_bit_typ etyp && !opt_mwords then
@@ -944,7 +944,7 @@ let doc_exp_lem, doc_let_lem =
               separate space [string ">>= fun";
                               doc_pat_lem ctxt true pat; arrow]
          in
-         infix 0 1 middle (expV b e1) (expN e2)
+         infix middle (expV b e1) (expN e2)
        in
        wrap_parens (align epp)
     | E_internal_return (e1) ->
@@ -984,7 +984,7 @@ let doc_exp_lem, doc_let_lem =
       | _ -> prefix 2 1 (string "else") (top_exp ctxt false e)
     in
     (prefix 2 1
-      (soft_surround 2 1 if_pp (top_exp ctxt true c) (string "then"))
+      (surround 2 1 if_pp (top_exp ctxt true c) (string "then"))
       (top_exp ctxt false t)) ^^
     break 1 ^^
     else_pp

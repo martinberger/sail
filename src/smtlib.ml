@@ -302,11 +302,11 @@ let merge_smt_defs defs1 defs2 =
   merge_tuples tuples1 tuples2 @ merge_datatypes datatypes1 datatypes2 @ body1 @ body2
 
 let pp_sfun str docs =
-  let open PPrint in
+  let open Pretty_print in
   parens (separate space (string str :: docs))
 
 let rec pp_smt_exp =
-  let open PPrint in
+  let open Pretty_print in
   function
   | Bool_lit b -> string (string_of_bool b)
   | Real_lit str -> string str
@@ -326,7 +326,7 @@ let rec pp_smt_exp =
      parens (string (Printf.sprintf "(_ sign_extend %d)" i) ^^ space ^^ pp_smt_exp exp)
 
 let rec pp_smt_typ =
-  let open PPrint in
+  let open Pretty_print in
   function
   | Bool -> string "Bool"
   | String -> string "String"
@@ -336,17 +336,19 @@ let rec pp_smt_typ =
   | Tuple tys -> pp_sfun ("Tup" ^ string_of_int (List.length tys)) (List.map pp_smt_typ tys)
   | Array (ty1, ty2) -> pp_sfun "Array" [pp_smt_typ ty1; pp_smt_typ ty2]
 
-let pp_str_smt_typ (str, ty) = let open PPrint in string str ^^ space ^^ pp_smt_typ ty
+let pp_str_smt_typ (str, ty) =
+  let open Pretty_print in
+  string str ^^ space ^^ pp_smt_typ ty
 
 let pp_smt_def =
-  let open PPrint in
+  let open Pretty_print in
   let open Printf in
   function
   | Define_fun (name, args, ty, exp) ->
      parens (string "define-fun" ^^ space ^^ string name
              ^^ space ^^ parens (separate_map space pp_str_smt_typ args)
              ^^ space ^^ pp_smt_typ ty
-             ^//^ pp_smt_exp exp)
+             ^/^ pp_smt_exp exp)
 
   | Declare_const (name, ty) ->
      pp_sfun "declare-const" [string name; pp_smt_typ ty]
@@ -399,7 +401,7 @@ let pp_smt_def =
   | Assert exp ->
      pp_sfun "assert" [pp_smt_exp exp]
 
-let string_of_smt_def def = Pretty_print_sail.to_string (pp_smt_def def)
+let string_of_smt_def def = Pretty_print.to_string 200 (pp_smt_def def)
 
 let output_smt_defs out_chan smt =
   List.iter (fun def -> output_string out_chan (string_of_smt_def def ^ "\n")) smt

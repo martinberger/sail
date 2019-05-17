@@ -54,7 +54,7 @@ open Jib
 open Jib_compile
 open Jib_util
 open Type_check
-open PPrint
+open Pretty_print
 open Value2
 
 open Anf
@@ -395,7 +395,7 @@ let analyze_primop' ctx id args typ =
   let v_one = V_lit (VL_int (Big_int.of_int 1), CT_fint 64) in
   let v_int n = V_lit (VL_int (Big_int.of_int n), CT_fint 64) in
 
-  c_debug (lazy ("Analyzing primop " ^ extern ^ "(" ^ Util.string_of_list ", " (fun aval -> Pretty_print_sail.to_string (pp_aval aval)) args ^ ")"));
+  c_debug (lazy ("Analyzing primop " ^ extern ^ "(" ^ Util.string_of_list ", " (fun aval -> Pretty_print.to_string 120 (pp_aval aval)) args ^ ")"));
 
   match extern, args with
   | "eq_bits", [AV_cval (v1, _); AV_cval (v2, _)] ->
@@ -1370,13 +1370,13 @@ let rec codegen_instr fid ctx (I_aux (instr, (_, l))) =
      ^^ surround 0 0 lbrace (separate_map hardline (codegen_instr fid ctx) else_instrs) (twice space ^^ rbrace)
 
   | I_block instrs ->
-     string "  {"
-     ^^ jump 2 2 (separate_map hardline (codegen_instr fid ctx) instrs) ^^ hardline
+     string "  {" ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr fid ctx) instrs) ^^ hardline
      ^^ string "  }"
 
   | I_try_block instrs ->
-     string "  { /* try */"
-     ^^ jump 2 2 (separate_map hardline (codegen_instr fid ctx) instrs) ^^ hardline
+     string "  { /* try */" ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr fid ctx) instrs) ^^ hardline
      ^^ string "  }"
 
   | I_funcall (x, extern, f, args) ->
@@ -1617,11 +1617,11 @@ let codegen_type_def ctx = function
        | [] -> string "{}"
        | [(ctor_id, ctyp)] ->
           string (Printf.sprintf "if (%skind == Kind_%s)" v (sgen_id ctor_id)) ^^ lbrace ^^ hardline
-          ^^ jump 0 2 (f ctor_id ctyp)
+          ^^ nest 2 (f ctor_id ctyp)
           ^^ hardline ^^ rbrace
        | (ctor_id, ctyp) :: ctors ->
           string (Printf.sprintf "if (%skind == Kind_%s) " v (sgen_id ctor_id)) ^^ lbrace ^^ hardline
-          ^^ jump 0 2 (f ctor_id ctyp)
+          ^^ nest 2 (f ctor_id ctyp)
           ^^ hardline ^^ rbrace ^^ string " else " ^^ each_ctor v f ctors
      in
      let codegen_init =
@@ -1702,7 +1702,7 @@ let codegen_type_def ctx = function
          | [] -> string "return false;"
          | (ctor_id, ctyp) :: ctors ->
             string (Printf.sprintf "if (op1.kind == Kind_%s && op2.kind == Kind_%s) " (sgen_id ctor_id) (sgen_id ctor_id)) ^^ lbrace ^^ hardline
-            ^^ jump 0 2 (codegen_eq_test ctor_id ctyp)
+            ^^ nest 2 (codegen_eq_test ctor_id ctyp)
             ^^ hardline ^^ rbrace ^^ string " else " ^^ codegen_eq_tests ctors
        in
        let n = sgen_id id in
@@ -2018,7 +2018,7 @@ let codegen_def' ctx = function
      in
      function_header
      ^^ string "{"
-     ^^ jump 0 2 (separate_map hardline (codegen_instr id ctx) instrs) ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr id ctx) instrs) ^^ hardline
      ^^ string "}"
 
   | CDEF_type ctype_def ->
@@ -2031,7 +2031,7 @@ let codegen_def' ctx = function
      ^^ twice hardline
      ^^ startup_header ^^ hardline
      ^^ string "{"
-     ^^ jump 0 2 (separate_map hardline codegen_alloc instrs) ^^ hardline
+     ^^ nest 2 (separate_map hardline codegen_alloc instrs) ^^ hardline
      ^^ string "}"
 
   | CDEF_finish (id, instrs) ->
@@ -2041,7 +2041,7 @@ let codegen_def' ctx = function
      ^^ twice hardline
      ^^ finish_header ^^ hardline
      ^^ string "{"
-     ^^ jump 0 2 (separate_map hardline (codegen_instr id ctx) instrs) ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr id ctx) instrs) ^^ hardline
      ^^ string "}"
 
   | CDEF_let (number, bindings, instrs) ->
@@ -2055,12 +2055,12 @@ let codegen_def' ctx = function
      separate_map hardline (fun (id, ctyp) -> string (Printf.sprintf "%s %s;" (sgen_ctyp ctyp) (sgen_id id))) bindings
      ^^ hardline ^^ string (Printf.sprintf "static void create_letbind_%d(void) " number)
      ^^ string "{"
-     ^^ jump 0 2 (separate_map hardline codegen_alloc setup) ^^ hardline
-     ^^ jump 0 2 (separate_map hardline (codegen_instr (mk_id "let") { ctx with no_raw = true }) instrs) ^^ hardline
+     ^^ nest 2 (separate_map hardline codegen_alloc setup) ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr (mk_id "let") { ctx with no_raw = true }) instrs) ^^ hardline
      ^^ string "}"
      ^^ hardline ^^ string (Printf.sprintf "static void kill_letbind_%d(void) " number)
      ^^ string "{"
-     ^^ jump 0 2 (separate_map hardline (codegen_instr (mk_id "let") ctx) cleanup) ^^ hardline
+     ^^ nest 2 (separate_map hardline (codegen_instr (mk_id "let") ctx) cleanup) ^^ hardline
      ^^ string "}"
 
 (** As we generate C we need to generate specialized version of tuple,
@@ -2096,7 +2096,7 @@ let codegen_def ctx def =
   (* We should have erased any polymorphism introduced by variants at this point! *)
   if List.exists is_polymorphic ctyps then
     let polymorphic_ctyps = List.filter is_polymorphic ctyps in
-    prerr_endline (Pretty_print_sail.to_string (pp_cdef def));
+    prerr_endline (Pretty_print.to_string 120 (pp_cdef def));
     c_error (Printf.sprintf "Found polymorphic types:\n%s\nwhile generating definition."
                             (Util.string_of_list "\n" string_of_ctyp polymorphic_ctyps))
   else
@@ -2114,7 +2114,7 @@ let sgen_startup = function
   | _ -> assert false
 
 let sgen_instr id ctx instr =
-  Pretty_print_sail.to_string (codegen_instr id ctx instr)
+  Pretty_print.to_string 120 (codegen_instr id ctx instr)
 
 let is_cdef_finish = function
   | CDEF_startup _ -> true
@@ -2256,15 +2256,15 @@ let compile_ast env output_chan c_includes ast =
 
     let hlhl = hardline ^^ hardline in
 
-    Pretty_print_sail.to_string (preamble ^^ hlhl ^^ docs ^^ hlhl
-                                 ^^ (if not !opt_no_rts then
-                                       model_init ^^ hlhl
-                                       ^^ model_fini ^^ hlhl
-                                       ^^ model_default_main ^^ hlhl
-                                     else
-                                       empty)
-                                 ^^ model_main ^^ hardline)
-    |> output_string output_chan
+    Pretty_print.to_channel 120 output_chan
+      (preamble ^^ hlhl ^^ docs ^^ hlhl
+       ^^ (if not !opt_no_rts then
+             model_init ^^ hlhl
+             ^^ model_fini ^^ hlhl
+             ^^ model_default_main ^^ hlhl
+           else
+             empty)
+       ^^ model_main ^^ hardline)
   with
   | Type_error (_, l, err) ->
      c_error ~loc:l ("Unexpected type error when compiling to C:\n" ^ Type_error.string_of_type_error err)

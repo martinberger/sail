@@ -50,7 +50,7 @@
 
 open Ast
 open Ast_util
-open PPrint
+open Pretty_print
 open Printf
 
 module StringSet = Set.Make(String);;
@@ -338,7 +338,7 @@ let rec latex_command cat id no_loc ((l, _) as annot) =
   let code_file = category_name cat ^ Util.file_encode_string (string_of_id id) ^ ".tex" in
   let chan = open_out (Filename.concat !opt_directory code_file) in
   let doc = if cat = Val then no_loc else latex_loc no_loc l in
-  output_string chan (Pretty_print_sail.to_string doc);
+  output_string chan (Pretty_print.to_string 120 doc);
   close_out chan;
   let command = sprintf "\\%s%s%s" !opt_prefix (category_name cat) (latex_id id) in
   if StringSet.mem command state.commands then

@@ -390,7 +390,7 @@ let rec compile_aval l ctx = function
      [iclear vector_ctyp gs]
 
   | AV_vector _ as aval ->
-     raise (Reporting.err_general l ("Have AVL_vector: " ^ Pretty_print_sail.to_string (pp_aval aval) ^ " which is not a vector type"))
+     raise (Reporting.err_general l ("Have AVL_vector: " ^ Pretty_print.to_string 120 (pp_aval aval) ^ " which is not a vector type"))
 
   | AV_list (avals, Typ_aux (typ, _)) ->
      let ctyp = match typ with
@@ -1190,7 +1190,7 @@ let rec compile_def n total ctx def =
   | DEF_fundef (FD_aux (FD_function (_, _, _, [FCL_aux (FCL_Funcl (id, _), _)]), _))
        when !opt_memo_cache ->
      let digest =
-       def |> Pretty_print_sail.doc_def |> Pretty_print_sail.to_string |> Digest.string
+       def |> Pretty_print_sail.doc_def |> Pretty_print.to_string 120 |> Digest.string
      in
      let cachefile = Filename.concat "_sbuild" ("ccache" ^ Digest.to_hex digest) in
      let cached =
@@ -1290,7 +1290,7 @@ and compile_def' n total ctx = function
                         Util.(string_of_ctyp ret_ctyp |> yellow |> clear)
        in
        prerr_endline (Util.header header (List.length arg_ctyps + 2));
-       prerr_endline (Pretty_print_sail.to_string PPrint.(separate_map hardline pp_instr instrs))
+       prerr_endline (Pretty_print.(pp_instrs instrs |> to_string 120))
      else ();
 
      if !opt_debug_flow_graphs then
@@ -1371,7 +1371,7 @@ and compile_def' n total ctx = function
 
   (* Scattereds and mapdefs should be removed by this point *)
   | (DEF_scattered _ | DEF_mapdef _) as def ->
-     raise (Reporting.err_general Parse_ast.Unknown ("Could not compile:\n" ^ Pretty_print_sail.to_string (Pretty_print_sail.doc_def def)))
+     raise (Reporting.err_general Parse_ast.Unknown ("Could not compile:\n" ^ Pretty_print.to_string 120 (Pretty_print_sail.doc_def def)))
 
 let rec specialize_variants ctx prior =
   let unifications = ref (Bindings.empty) in

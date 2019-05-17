@@ -53,7 +53,7 @@ open Ast
 open Ast_util
 open Reporting
 open Rewriter
-open PPrint
+open Pretty_print
 open Pretty_print_common
 
 module StringSet = Set.Make(String)
@@ -893,20 +893,20 @@ let coq_escape_string s =
    
 let doc_lit (L_aux(lit,l)) =
   match lit with
-  | L_unit  -> utf8string "tt"
-  | L_zero  -> utf8string "B0"
-  | L_one   -> utf8string "B1"
-  | L_false -> utf8string "false"
-  | L_true  -> utf8string "true"
+  | L_unit  -> string "tt"
+  | L_zero  -> string "B0"
+  | L_one   -> string "B1"
+  | L_false -> string "false"
+  | L_true  -> string "true"
   | L_num i ->
      let s = Big_int.to_string i in
-     let ipp = utf8string s in
+     let ipp = string s in
      if Big_int.less i Big_int.zero then parens ipp else ipp
   | L_hex n -> failwith "Shouldn't happen" (*"(num_to_vec " ^ ("0x" ^ n) ^ ")" (*shouldn't happen*)*)
   | L_bin n -> failwith "Shouldn't happen" (*"(num_to_vec " ^ ("0b" ^ n) ^ ")" (*shouldn't happen*)*)
   | L_undef ->
-     utf8string "(Fail \"undefined value of unsupported type\")"
-  | L_string s -> utf8string ("\"" ^ (coq_escape_string s) ^ "\"")
+     string "(Fail \"undefined value of unsupported type\")"
+  | L_string s -> string ("\"" ^ (coq_escape_string s) ^ "\"")
   | L_real s ->
     (* Lem does not support decimal syntax, so we translate a string
        of the form "x.y" into the ratio (x * 10^len(y) + y) / 10^len(y).
@@ -1476,7 +1476,7 @@ let doc_exp, doc_let =
                if informative then parens (string "build_trivial_ex" ^/^ epp)
                else epp
           in
-          let epp = hang 2 (flow (break 1) (call :: List.map doc_arg args)) in
+          let epp = hang 2 (separate (break 1) (call :: List.map doc_arg args)) in
           let epp = if informative then epp ^^ doc_tannot ctxt (env_of full_exp) true (general_typ_of full_exp) else epp in
           wrap_parens epp
        (* temporary hack to make the loop body a function of the temporary variables *)
@@ -1722,7 +1722,7 @@ let doc_exp, doc_let =
           in
           let epp =
             if is_ctor
-            then hang 2 (call ^^ break 1 ^^ parens (flow (comma ^^ break 1) (List.map2 (doc_arg false) args arg_typs)))
+            then hang 2 (call ^^ break 1 ^^ parens (separate (comma ^^ break 1) (List.map2 (doc_arg false) args arg_typs)))
             else
               let main_call = call :: List.map2 (doc_arg true) args arg_typs in
               let all =
@@ -1732,7 +1732,7 @@ let doc_exp, doc_let =
                      | Id_aux (Id x,_) when is_prefix "#rec#" x ->
                         main_call @ [parens (string "Zwf_guarded _")]
                      | _ ->  main_call
-              in hang 2 (flow (break 1) all) in
+              in hang 2 (separate (break 1) all) in
 
           (* Decide whether to unpack an existential result, pack one, or cast.
              To do this we compare the expected type stored in the checked expression
@@ -2037,7 +2037,7 @@ let doc_exp, doc_let =
                | None -> "assert_exp", ">>"
              in
              let epp = liftR (separate space [string assert_fn; expY assert_e1; expY assert_e2]) in
-             let epp = infix 0 1 (string mid) epp (top_exp new_ctxt false e2) in
+             let epp = infix (string mid) epp (top_exp new_ctxt false e2) in
              if aexp_needed then parens (align epp) else align epp
          | _ ->
             let epp =
@@ -2084,7 +2084,7 @@ let doc_exp, doc_let =
               in
               let e1_pp = expY e1 in
               let e2_pp = top_exp new_ctxt false e2 in
-              infix 0 1 middle e1_pp e2_pp
+              infix middle e1_pp e2_pp
             in
             if aexp_needed then parens (align epp) else epp
        end
@@ -2141,7 +2141,7 @@ let doc_exp, doc_let =
       | _ -> prefix 2 1 (string "else") (top_exp ctxt false e)
     in
     (prefix 2 1
-      (soft_surround 2 1 if_pp
+      (surround 2 1 if_pp
          ((if condition_produces_constraint ctxt c then string "sumbool_of_bool" ^^ space else empty)
           ^^ parens c_pp) (string "then"))
       t_pp) ^^
@@ -2678,7 +2678,7 @@ let doc_funcl mutrec rec_opt ?rec_set (FCL_aux(FCL_Funcl(id, pexp), annot)) =
        (used_a_pattern := true;
         squote ^^ parens (separate space [doc_pat ctxt true true (pat, exp_typ); colon; doc_typ ctxt Env.empty typ]))
   in
-  let patspp = flow_map (break 1) doc_binder pats in
+  let patspp = separate_map (break 1) doc_binder pats in
   let atom_constrs = Util.map_filter (atom_constraint ctxt) pats in
   let atom_constr_pp = separate space atom_constrs in
   let retpp =
@@ -2741,8 +2741,8 @@ let doc_funcl mutrec rec_opt ?rec_set (FCL_aux(FCL_Funcl(id, pexp), annot)) =
   let bodypp = if effectful eff then bodypp else match build_ex with Some s -> string s ^^ parens bodypp | None -> bodypp in
   let bodypp = separate (break 1) fixupspp ^/^ bodypp in
   group (prefix 3 1
-    (flow (break 1) ([intropp; idpp] @ quantspp @ [patspp] @ constrspp @ [atom_constr_pp] @ accpp) ^/^
-       flow (break 1) (measurepp @ [colon; retpp; coloneq]))
+    (separate (break 1) ([intropp; idpp] @ quantspp @ [patspp] @ constrspp @ [atom_constr_pp] @ accpp) ^/^
+       separate (break 1) (measurepp @ [colon; retpp; coloneq]))
     (bodypp ^^ terminalpp)) ^^ implicitargs
 
 let get_id = function

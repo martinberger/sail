@@ -3,7 +3,6 @@ Ast
 Ast_util
 Bitfield
 C_backend
-Cgen_backend
 Constant_fold
 Constraint
 Elf_loader
@@ -28,11 +27,6 @@ Optimize
 Parse_ast
 Parser
 Pattern_completeness
-PPrint
-PPrintCombinators
-PPrintEngine
-PPrintRenderer
-PPrintOCaml
 Pretty_print
 Pretty_print_common
 Pretty_print_coq

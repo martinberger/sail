@@ -50,7 +50,7 @@
 
 open Ast
 module Big_int = Nat_big_num
-open PPrint
+open Pretty_print
 
 let pipe = string "|"
 let arrow = string "->"
@@ -77,8 +77,8 @@ let comma_sp = comma ^^ space
 let colon_sp = spaces colon
 
 let doc_int i = string (Big_int.to_string i)
-let doc_op symb a b = infix 2 1 symb a b
+let doc_op symb a b = a ^^ space ^^ symb ^^ space ^^ b
 let doc_unop symb a = prefix 2 1 symb a
 
-let print ?(len=100) channel doc = ToChannel.pretty 1. len channel doc
-let to_buf ?(len=100) buf doc = ToBuffer.pretty 1. len buf doc
+let print ?(len=100) channel doc = Pretty_print.to_channel len channel doc
+let to_buf ?(len=100) buf doc = Pretty_print.to_channel len buf doc
