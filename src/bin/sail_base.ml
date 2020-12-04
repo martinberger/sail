@@ -48,6 +48,7 @@
 (*  SUCH DAMAGE.                                                          *)
 (**************************************************************************)
 
+open Sail
 open Process_file
 
 module Big_int = Nat_big_num

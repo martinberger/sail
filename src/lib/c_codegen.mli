@@ -48,61 +48,39 @@
 (*  SUCH DAMAGE.                                                          *)
 (**************************************************************************)
 
-open Ocamlbuild_plugin ;;
-open Command ;;
-open Pathname ;;
-open Outcome ;;
+open Ast
+open Ast_util
+open Jib
 
-let split ch s =
-  let x = ref [] in
-  let rec go s =
-    if not (String.contains s ch) then List.rev (s :: !x)
-    else begin
-      let pos = String.index s ch in
-      x := (String.before s pos)::!x;
-      go (String.after s (pos + 1))
-    end
-  in
-  go s
+type codegen_options
 
-(* paths relative to _build *)
-let lem = "lem" ;;
+val initial_options : codegen_options
 
-(* All -wl ignores should be removed if you want to see the pattern compilation, exhaustive, and unused var warnings *)
-let lem_opts = [A "-lib"; P "../gen_lib";
-                A "-wl_pat_comp"; P "ign"; 
-                A "-wl_pat_exh";  P "ign"; 
-                A "-wl_pat_fail"; P "ign";
-                A "-wl_unused_vars";   P "ign";
-(*                A "-suppress_renaming";*)
-               ] ;;
+(** Allows preserving (or renaming via add_custom_export) a Sail
+   identifier into the generated C source. *)
+val add_export : codegen_options -> id -> codegen_options
+val add_custom_export : codegen_options -> id -> string -> codegen_options
 
-dispatch begin function
-| After_rules ->
-    (* Bisect_ppx_plugin.handle_coverage (); *)
+(** This causes the code generator to rename a symbol post
+   name-mangling. Useful for generic types like tuples and generic
+   functions. *)
+val add_mangled_rename : codegen_options -> (string * string) -> codegen_options
 
-    (* ocaml_lib "lem_interp/interp"; *)
+(** A default set of reasonably sensible options for name mangling. *)
+val default_options : cdef list -> codegen_options
 
-    rule "lem -> ml"
-    ~prod: "%.ml"
-    ~dep: "%.lem"
-    (fun env builder -> Seq [
-      Cmd (S ([ P lem] @ lem_opts @ [ A "-ocaml"; P (env "%.lem") ]));
-      ]);
-
-    rule "sail -> lem"
-    ~prod: "%.lem"
-    ~deps: ["%.sail"; "sail.native"]
-    (fun env builder ->
-      let sail_opts = List.map (fun s -> A s) (
-        "-lem_ast" ::
-        try
-          split ',' (Sys.getenv "SAIL_OPTS")
-        with Not_found -> []) in
-      Seq [
-        Cmd (S ([ P "./sail.native"] @ sail_opts @ [P (env "%.sail")]));
-        mv (basename (env "%.lem")) (dirname (env "%.lem"))
-      ]);
-
-| _ -> ()
-end ;;
+(** Note: This causes a deprecated warning for the json type - fixing
+   it will break on ubuntu LTS which have older opam versions. *)
+val options_from_json : Yojson.Basic.json -> cdef list -> codegen_options
+  
+module type Options = sig
+  val opts : codegen_options
+end
+  
+module Make(O: Options) : sig
+  (** Generate a C file a header file. *)
+  val codegen : Jib_compile.ctx -> string -> cdef list -> unit
+  (** The same as codegen, but also generates a emulator wrapper for
+     the generated C file and header. *)
+  val emulator : Jib_compile.ctx -> string -> cdef list -> unit
+end

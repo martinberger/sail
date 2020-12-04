@@ -49,6 +49,7 @@
 (**************************************************************************)
 
 open Sail
+open Sail_base
 
 open Ast
 open Ast_util
@@ -423,7 +424,7 @@ let parse_session file =
   if Sys.file_exists file then
     let json = Yojson.Basic.from_file file in
     let args = Str.split (Str.regexp " +") (json |> member "options" |> to_string) in
-    Arg.parse_argv ~current:(ref 0) (Array.of_list ("sail" :: args)) Sail.options (fun _ -> ()) "";
+    Arg.parse_argv ~current:(ref 0) (Array.of_list ("sail" :: args)) Sail_base.options (fun _ -> ()) "";
     print_endline ("(message \"Using session " ^ file ^ "\")");
     {
       id = file;
@@ -528,7 +529,7 @@ let handle_input' input =
             let args = Str.split (Str.regexp " +") arg in
             begin match args with
             | opt :: args ->
-               Arg.parse_argv ~current:(ref 0) (Array.of_list ["sail"; opt; String.concat " " args]) Sail.options (fun _ -> ()) "";
+               Arg.parse_argv ~current:(ref 0) (Array.of_list ["sail"; opt; String.concat " " args]) Sail_base.options (fun _ -> ()) "";
             | [] -> print_endline "Must provide a valid option"
             end
           with

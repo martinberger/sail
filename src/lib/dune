@@ -1,0 +1,37 @@
+(library
+  (name sail)
+  (libraries sail_lem lem linksem pprint yojson omd))
+
+(ocamllex
+  (modules lexer gdbmi_lexer))
+
+(menhir
+  (modules parser gdbmi_parser))
+
+(rule
+  (target ast.lem)
+  (deps (:ott ../../language/sail.ott))
+  (action (run ott -sort false -generate_aux_rules true -o %{target} -picky_multiple_parses true %{ott})))
+
+(rule
+  (target jib.lem)
+  (deps (:ott ../../language/jib.ott))
+  (action (run ott -sort false -generate_aux_rules true -o %{target} -picky_multiple_parses true %{ott})))
+
+(rule
+  (target ast.ml)
+  (deps (:sed ast.sed) (:lem ast.lem))
+  (action (progn
+    (run lem -ocaml %{lem})
+    (run sed -i.bak -f %{sed} %{target}))))
+
+(rule
+  (target jib.ml)
+  (deps (:sed ast.sed) (:lem jib.lem) ast.ml)
+  (action (progn
+    (run lem -lib ../gen_lib -ocaml %{lem})
+    (run sed -i.bak -f %{sed} %{target}))))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A -w -27-32-33-26-39-9-38-50-34))))

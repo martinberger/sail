@@ -48,6 +48,7 @@
 (*  SUCH DAMAGE.                                                          *)
 (**************************************************************************)
 
+open Sail_lem
 open Anf
 open Ast
 open Ast_defs

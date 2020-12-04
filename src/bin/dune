@@ -1,0 +1,7 @@
+(executable
+  (name isail)
+  (libraries sail base64 linenoise))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A -w -27-32-33-26-39-9-38-50-34))))

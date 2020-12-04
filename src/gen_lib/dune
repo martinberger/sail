@@ -1,0 +1,38 @@
+(library
+  (name sail_lem)
+  (libraries lem))
+
+(rule
+  (targets
+   value2.ml
+   sail2_impl_base.ml
+   sail2_operators_bitlists.ml
+   sail2_operators_mwords.ml
+   sail2_prompt_monad.ml
+   sail2_state_lifting.ml
+   sail2_string.ml
+   sail2_instr_kinds.ml
+   sail2_operators.ml
+   sail2_prompt.ml
+   sail2_state.ml
+   sail2_state_monad.ml
+   sail2_values.ml)
+  (deps (:inputs
+         value2.lem
+         sail2_impl_base.lem
+         sail2_operators_bitlists.lem
+         sail2_operators_mwords.lem
+         sail2_prompt_monad.lem
+         sail2_state_lifting.lem
+         sail2_string.lem
+         sail2_instr_kinds.lem
+         sail2_operators.lem
+         sail2_prompt.lem
+         sail2_state.lem
+         sail2_state_monad.lem
+         sail2_values.lem))
+  (action (run lem -wl ign -ocaml %{inputs})))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A -w -27-32-33-26-39-9-38-50-34-37))))

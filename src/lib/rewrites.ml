@@ -49,6 +49,7 @@
 (**************************************************************************)
 
 module Big_int = Nat_big_num
+open Sail_lem
 open Ast
 open Ast_defs
 open Ast_util
